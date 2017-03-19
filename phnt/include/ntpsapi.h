@@ -167,11 +167,19 @@ typedef enum _PROCESSINFOCLASS
     ProcessAllowedCpuSetsInformation,
     ProcessSubsystemProcess,
     ProcessJobMemoryInformation, // PROCESS_JOB_MEMORY_INFO
-    ProcessInPrivate, // since THRESHOLD2 // 70
+    ProcessInPrivate, // since REDSTONE1 // 70
     ProcessRaiseUMExceptionOnInvalidHandleClose,
     ProcessIumChallengeResponse,
     ProcessChildProcessInformation, // PROCESS_CHILD_PROCESS_INFORMATION
     ProcessHighGraphicsPriorityInformation,
+    ProcessSubsystemInformation, // since REDSTONE2
+    ProcessEnergyValues,
+    ProcessActivityThrottleState,
+    ProcessActivityThrottlePolicy,
+    ProcessWin32kSyscallFilterInformation,
+    ProcessDisableSystemAllowedCpuSets, // 80
+    ProcessWakeInformation,
+    ProcessEnergyTrackingState,
     MaxProcessInfoClass
 } PROCESSINFOCLASS;
 #endif
@@ -215,16 +223,19 @@ typedef enum _THREADINFOCLASS
     ThreadIdealProcessorEx, // q: PROCESSOR_NUMBER
     ThreadCpuAccountingInformation, // since WIN8
     ThreadSuspendCount, // since WINBLUE
-    ThreadHeterogeneousCpuPolicy, // q: KHETERO_CPU_POLICY // since THRESHOLD
+    ThreadHeterogeneousCpuPolicy, // q: KHETERO_CPU_POLICY // since THRESHOLD2
     ThreadContainerId, // q: GUID
     ThreadNameInformation, // qs: THREAD_NAME_INFORMATION
     ThreadSelectedCpuSets,
     ThreadSystemThreadInformation, // q: SYSTEM_THREAD_INFORMATION // 40
-    ThreadActualGroupAffinity, // since THRESHOLD2
+    ThreadActualGroupAffinity, // since REDSTONE1
     ThreadDynamicCodePolicyInfo,
     ThreadExplicitCaseSensitivity,
     ThreadWorkOnBehalfTicket,
-    MaxThreadInfoClass
+    ThreadSubsystemInformation, // since REDSTONE2
+    ThreadDbgkWerReportActive,
+    ThreadAttachContainer,
+    MaxThreadInfoClass = 48,
 } THREADINFOCLASS;
 #endif
 
@@ -609,6 +620,7 @@ typedef enum _PS_PROTECTED_SIGNER
     PsProtectedSignerWindows,
     PsProtectedSignerWinTcb,
     PsProtectedSignerWinSystem,
+    PsProtectedSignerApp,
     PsProtectedSignerMax
 } PS_PROTECTED_SIGNER;
 
@@ -659,9 +671,13 @@ typedef struct _PROCESS_COMMIT_RELEASE_INFORMATION
     struct
     {
         ULONG Eligible : 1;
-        ULONG Spare : 31;
+        ULONG ReleaseRepurposedMemResetCommit : 1;
+        ULONG ForceReleaseMemResetCommit : 1;
+        ULONG Spare : 29;
     };
     SIZE_T CommitDebt;
+    SIZE_T CommittedMemResetSize;
+    SIZE_T RepurposedMemResetSize;
 } PROCESS_COMMIT_RELEASE_INFORMATION, *PPROCESS_COMMIT_RELEASE_INFORMATION;
 
 typedef struct _PROCESS_JOB_MEMORY_INFO
@@ -700,6 +716,7 @@ typedef struct _THREAD_LAST_SYSCALL_INFORMATION
 {
     PVOID FirstArgument;
     USHORT SystemCallNumber;
+    LARGE_INTEGER WaitTime;
 } THREAD_LAST_SYSCALL_INFORMATION, *PTHREAD_LAST_SYSCALL_INFORMATION;
 
 // private
@@ -1187,7 +1204,7 @@ typedef enum _PS_ATTRIBUTE_NUM
     PsAttributeSecureProcess, // since THRESHOLD
     PsAttributeJobList,
     PsAttributeChildProcessPolicy, // since THRESHOLD2
-    PsAttributeAllApplicationPackagesPolicy, // since REDSTONE
+    PsAttributeAllApplicationPackagesPolicy, // since REDSTONE1
     PsAttributeWin32kFilter,
     PsAttributeSafeOpenPromptOriginClaim,
     PsAttributeBnoIsolation,

@@ -125,7 +125,7 @@ typedef struct _EFI_DRIVER_ENTRY_LIST
     EFI_DRIVER_ENTRY DriverEntry;
 } EFI_DRIVER_ENTRY_LIST, *PEFI_DRIVER_ENTRY_LIST;
 
-#if (PHNT_VERSION >= PHNT_VISTA)
+#if (PHNT_VERSION >= PHNT_WINXP)
 
 NTSYSCALLAPI
 NTSTATUS
@@ -1314,7 +1314,7 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemNativeBasicInformation, // not implemented
     SystemSpare1, // not implemented
     SystemLowPriorityIoInformation, // q: SYSTEM_LOW_PRIORITY_IO_INFORMATION
-    SystemTpmBootEntropyInformation, // q: TPM_BOOT_ENTROPY_NT_RESULT // ExQueryTpmBootEntropyInformation
+    SystemBootEntropyInformation, // q: BOOT_ENTROPY_NT_RESULT // ExQueryTpmBootEntropyInformation
     SystemVerifierCountersInformation, // q: SYSTEM_VERIFIER_COUNTERS_INFORMATION
     SystemPagedPoolInformationEx, // q: SYSTEM_FILECACHE_INFORMATION; s (requires SeIncreaseQuotaPrivilege) (info for WorkingSetTypePagedPool)
     SystemSystemPtesInformationEx, // q: SYSTEM_FILECACHE_INFORMATION; s (requires SeIncreaseQuotaPrivilege) (info for WorkingSetTypeSystemPtes) // 120
@@ -1376,11 +1376,20 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemCpuSetTagInformation, // q: SYSTEM_CPU_SET_TAG_INFORMATION
     SystemWin32WerStartCallout,
     SystemSecureKernelProfileInformation, // q: SYSTEM_SECURE_KERNEL_HYPERGUARD_PROFILE_INFORMATION
-    SystemCodeIntegrityPlatformManifestInformation, // q: SYSTEM_SECUREBOOT_PLATFORM_MANIFEST_INFORMATION // since REDSTONE
+    SystemCodeIntegrityPlatformManifestInformation, // q: SYSTEM_SECUREBOOT_PLATFORM_MANIFEST_INFORMATION // since REDSTONE1
     SystemInterruptSteeringInformation, // 180
     SystemSupportedProcessorArchitectures,
     SystemMemoryUsageInformation, // q: SYSTEM_MEMORY_USAGE_INFORMATION
     SystemCodeIntegrityCertificateInformation, // q: SYSTEM_CODEINTEGRITY_CERTIFICATE_INFORMATION
+    SystemPhysicalMemoryInformation, // since REDSTONE2
+    SystemControlFlowTransition,
+    SystemKernelDebuggingAllowed,
+    SystemActivityModerationExeState,
+    SystemActivityModerationUserSettings,
+    SystemCodeIntegrityPoliciesFullInformation,
+    SystemCodeIntegrityUnlockInformation, // 190
+    SystemIntegrityQuotaInformation,
+    SystemFlushInformation,
     MaxSystemInfoClass
 } SYSTEM_INFORMATION_CLASS;
 
@@ -1393,9 +1402,9 @@ typedef struct _SYSTEM_BASIC_INFORMATION
     ULONG LowestPhysicalPageNumber;
     ULONG HighestPhysicalPageNumber;
     ULONG AllocationGranularity;
-    ULONG_PTR MinimumUserModeAddress;
-    ULONG_PTR MaximumUserModeAddress;
-    ULONG_PTR ActiveProcessorsAffinityMask;
+    ULONGLONG MinimumUserModeAddress;
+    ULONGLONG MaximumUserModeAddress;
+    ULONGLONG ActiveProcessorsAffinityMask;
     CCHAR NumberOfProcessors;
 } SYSTEM_BASIC_INFORMATION, *PSYSTEM_BASIC_INFORMATION;
 
@@ -1526,9 +1535,9 @@ typedef struct _SYSTEM_EXTENDED_THREAD_INFORMATION
     PVOID StackLimit;
     PVOID Win32StartAddress;
     PTEB TebBase; // since VISTA
-    ULONG_PTR Reserved2;
-    ULONG_PTR Reserved3;
-    ULONG_PTR Reserved4;
+    ULONGLONG Reserved2;
+    ULONGLONG Reserved3;
+    ULONGLONG Reserved4;
 } SYSTEM_EXTENDED_THREAD_INFORMATION, *PSYSTEM_EXTENDED_THREAD_INFORMATION;
 
 typedef struct _SYSTEM_PROCESS_INFORMATION
@@ -1548,7 +1557,7 @@ typedef struct _SYSTEM_PROCESS_INFORMATION
     HANDLE InheritedFromUniqueProcessId;
     ULONG HandleCount;
     ULONG SessionId;
-    ULONG_PTR UniqueProcessKey; // since VISTA (requires SystemExtendedProcessInformation)
+    ULONGLONG UniqueProcessKey; // since VISTA (requires SystemExtendedProcessInformation)
     SIZE_T PeakVirtualSize;
     SIZE_T VirtualSize;
     ULONG PageFaultCount;
@@ -1610,15 +1619,17 @@ typedef struct _SYSTEM_CALL_TIME_INFORMATION
 } SYSTEM_CALL_TIME_INFORMATION, *PSYSTEM_CALL_TIME_INFORMATION;
 
 // private
+// RTL_PROCESS_LOCK_INFORMATION
 typedef struct _SYSTEM_LOCK_TABLE_ENTRY_INFO
 {
     PVOID Address;
     USHORT Type;
-    USHORT Reserved1;
-    ULONG ExclusiveOwnerThreadId;
-    ULONG ActiveCount;
+    USHORT CreatorBackTraceIndex;
+    HANDLE OwningThread;
+    LONG LockCount;
     ULONG ContentionCount;
-    ULONG Reserved2[2];
+    ULONG EntryCount;
+    LONG RecursionCount;
     ULONG NumberOfSharedWaiters;
     ULONG NumberOfExclusiveWaiters;
 } SYSTEM_LOCK_TABLE_ENTRY_INFO, *PSYSTEM_LOCK_TABLE_ENTRY_INFO;
@@ -2075,6 +2086,7 @@ typedef struct _SYSTEM_BOOT_ENVIRONMENT_INFORMATION
 {
     GUID BootIdentifier;
     FIRMWARE_TYPE FirmwareType;
+    ULONGLONG BootFlags;
 } SYSTEM_BOOT_ENVIRONMENT_INFORMATION, *PSYSTEM_BOOT_ENVIRONMENT_INFORMATION;
 
 // private
@@ -2092,7 +2104,11 @@ typedef struct _SYSTEM_VERIFIER_INFORMATION_EX
     UNICODE_STRING PreviousBucketName;
     ULONG IrpCancelTimeoutMsec;
     ULONG VerifierExtensionEnabled;
+#ifdef _WIN64
     ULONG Reserved[1];
+#else
+    ULONG Reserved[3];
+#endif
 } SYSTEM_VERIFIER_INFORMATION_EX, *PSYSTEM_VERIFIER_INFORMATION_EX;
 
 // private
@@ -2110,7 +2126,7 @@ typedef struct _SYSTEM_SYSTEM_DISK_INFORMATION
 // private
 typedef struct _SYSTEM_PROCESSOR_PERFORMANCE_HITCOUNT
 {
-    LARGE_INTEGER Hits; // ULONG in WIN8
+    ULONGLONG Hits; // ULONG in WIN8
     UCHAR PercentFrequency;
 } SYSTEM_PROCESSOR_PERFORMANCE_HITCOUNT, *PSYSTEM_PROCESSOR_PERFORMANCE_HITCOUNT;
 
@@ -2177,7 +2193,7 @@ typedef struct _SYSTEM_VHD_BOOT_INFORMATION
 {
     BOOLEAN OsDiskIsVhd;
     ULONG OsVhdFilePathOffset;
-    WCHAR OsVhdParentVolume[ANYSIZE_ARRAY];
+    WCHAR OsVhdParentVolume[1];
 } SYSTEM_VHD_BOOT_INFORMATION, *PSYSTEM_VHD_BOOT_INFORMATION;
 
 // private
@@ -2195,29 +2211,53 @@ typedef struct _SYSTEM_LOW_PRIORITY_IO_INFORMATION
     ULONG BlanketBoostCount;
 } SYSTEM_LOW_PRIORITY_IO_INFORMATION, *PSYSTEM_LOW_PRIORITY_IO_INFORMATION;
 
-// symbols
-typedef enum _TPM_BOOT_ENTROPY_RESULT_CODE
+// private
+typedef enum _BOOT_ENTROPY_SOURCE_RESULT_CODE
 {
-    TpmBootEntropyStructureUninitialized,
-    TpmBootEntropyDisabledByPolicy,
-    TpmBootEntropyNoTpmFound,
-    TpmBootEntropyTpmError,
-    TpmBootEntropySuccess
-} TPM_BOOT_ENTROPY_RESULT_CODE;
+    BootEntropySourceStructureUninitialized,
+    BootEntropySourceDisabledByPolicy,
+    BootEntropySourceNotPresent,
+    BootEntropySourceError,
+    BootEntropySourceSuccess
+} BOOT_ENTROPY_SOURCE_RESULT_CODE;
+
+// private
+typedef enum _BOOT_ENTROPY_SOURCE_ID
+{
+    BootEntropySourceNone,
+    BootEntropySourceSeedfile,
+    BootEntropySourceExternal,
+    BootEntropySourceTpm,
+    BootEntropySourceRdrand,
+    BootEntropySourceTime,
+    BootEntropySourceAcpiOem0,
+    BootEntropySourceUefi,
+    BootEntropySourceCng,
+    BootMaxEntropySources
+} BOOT_ENTROPY_SOURCE_ID;
 
 // Contents of KeLoaderBlock->Extension->TpmBootEntropyResult (TPM_BOOT_ENTROPY_LDR_RESULT).
 // EntropyData is truncated to 40 bytes.
 
 // private
-typedef struct _TPM_BOOT_ENTROPY_NT_RESULT
+typedef struct _BOOT_ENTROPY_SOURCE_NT_RESULT
 {
+    BOOT_ENTROPY_SOURCE_ID SourceId;
     ULONGLONG Policy;
-    TPM_BOOT_ENTROPY_RESULT_CODE ResultCode;
+    BOOT_ENTROPY_SOURCE_RESULT_CODE ResultCode;
     NTSTATUS ResultStatus;
     ULONGLONG Time;
     ULONG EntropyLength;
-    UCHAR EntropyData[40];
-} TPM_BOOT_ENTROPY_NT_RESULT, *PTPM_BOOT_ENTROPY_NT_RESULT;
+    UCHAR EntropyData[64];
+} BOOT_ENTROPY_SOURCE_NT_RESULT, *PBOOT_ENTROPY_SOURCE_NT_RESULT;
+
+// private
+typedef struct _BOOT_ENTROPY_NT_RESULT
+{
+    ULONG MaxEntropySources;
+    BOOT_ENTROPY_SOURCE_NT_RESULT EntropySourceResult[8];
+    UCHAR SeedBytesForCng[48];
+} BOOT_ENTROPY_NT_RESULT, *PBOOT_ENTROPY_NT_RESULT;
 
 // private
 typedef struct _SYSTEM_VERIFIER_COUNTERS_INFORMATION
@@ -2239,6 +2279,13 @@ typedef struct _SYSTEM_VERIFIER_COUNTERS_INFORMATION
     SIZE_T PeakPagesForMdlBytes;
     SIZE_T ContiguousMemoryBytes;
     SIZE_T PeakContiguousMemoryBytes;
+    ULONG ExecutePoolTypes;
+    ULONG ExecutePageProtections;
+    ULONG ExecutePageMappings;
+    ULONG ExecuteWriteSections;
+    ULONG SectionAlignmentFailures;
+    ULONG UnsupportedRelocs;
+    ULONG IATInExecutableSection;
 } SYSTEM_VERIFIER_COUNTERS_INFORMATION, *PSYSTEM_VERIFIER_COUNTERS_INFORMATION;
 
 // private

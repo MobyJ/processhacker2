@@ -879,7 +879,7 @@ BOOLEAN PhSipGetCpuFrequencyFromDistribution(
             else
             {
                 hitcountOld = (PSYSTEM_PROCESSOR_PERFORMANCE_HITCOUNT_WIN8)((PCHAR)stateDistribution->States + sizeof(SYSTEM_PROCESSOR_PERFORMANCE_HITCOUNT_WIN8) * j);
-                stateDifference->States[j].Hits.QuadPart = hitcountOld->Hits;
+                stateDifference->States[j].Hits = hitcountOld->Hits;
                 stateDifference->States[j].PercentFrequency = hitcountOld->PercentFrequency;
             }
         }
@@ -900,12 +900,12 @@ BOOLEAN PhSipGetCpuFrequencyFromDistribution(
         {
             if (WindowsVersion >= WINDOWS_8_1)
             {
-                stateDifference->States[j].Hits.QuadPart -= stateDistribution->States[j].Hits.QuadPart;
+                stateDifference->States[j].Hits -= stateDistribution->States[j].Hits;
             }
             else
             {
                 hitcountOld = (PSYSTEM_PROCESSOR_PERFORMANCE_HITCOUNT_WIN8)((PCHAR)stateDistribution->States + sizeof(SYSTEM_PROCESSOR_PERFORMANCE_HITCOUNT_WIN8) * j);
-                stateDifference->States[j].Hits.QuadPart -= hitcountOld->Hits;
+                stateDifference->States[j].Hits -= hitcountOld->Hits;
             }
         }
     }
@@ -921,8 +921,8 @@ BOOLEAN PhSipGetCpuFrequencyFromDistribution(
 
         for (j = 0; j < 2; j++)
         {
-            count += (ULONGLONG)stateDifference->States[j].Hits.QuadPart;
-            total += (ULONGLONG)stateDifference->States[j].Hits.QuadPart * stateDifference->States[j].PercentFrequency;
+            count += stateDifference->States[j].Hits;
+            total += stateDifference->States[j].Hits * stateDifference->States[j].PercentFrequency;
         }
     }
 

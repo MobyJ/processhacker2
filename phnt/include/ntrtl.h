@@ -3902,6 +3902,26 @@ typedef struct _RTL_PROCESS_VERIFIER_OPTIONS
 } RTL_PROCESS_VERIFIER_OPTIONS, *PRTL_PROCESS_VERIFIER_OPTIONS;
 
 // private
+typedef struct _RTL_PROCESS_BACKTRACE_INFORMATION
+{
+    PVOID SymbolicBackTrace;
+    ULONG TraceCount;
+    USHORT Index;
+    USHORT Depth;
+    PVOID BackTrace[32];
+} RTL_PROCESS_BACKTRACE_INFORMATION, *PRTL_PROCESS_BACKTRACE_INFORMATION;
+
+// private
+typedef struct _RTL_PROCESS_BACKTRACES
+{
+    ULONG CommittedMemory;
+    ULONG ReservedMemory;
+    ULONG NumberOfBackTraceLookups;
+    ULONG NumberOfBackTraces;
+    RTL_PROCESS_BACKTRACE_INFORMATION BackTraces[1];
+} RTL_PROCESS_BACKTRACES, *PRTL_PROCESS_BACKTRACES;
+
+// private
 typedef struct _RTL_DEBUG_INFORMATION
 {
     HANDLE SectionHandleClient;
@@ -3921,7 +3941,7 @@ typedef struct _RTL_DEBUG_INFORMATION
         struct _RTL_PROCESS_MODULES *Modules;
         struct _RTL_PROCESS_MODULE_INFORMATION_EX *ModulesEx;
     };
-    struct _RTL_PROCESS_BACKTRACES *BackTraces;
+    PRTL_PROCESS_BACKTRACES BackTraces;
     struct _RTL_PROCESS_HEAPS *Heaps;
     struct _RTL_PROCESS_LOCKS *Locks;
     PVOID SpecificHeap;
@@ -3983,6 +4003,13 @@ RtlDeCommitDebugInfo(
 #define RTL_QUERY_PROCESS_HEAP_ENTRIES_EX 0x00000200 // ?
 #define RTL_QUERY_PROCESS_CS_OWNER 0x00000400 // rev
 #define RTL_QUERY_PROCESS_NONINVASIVE 0x80000000
+
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlQueryProcessBackTraceInformation(
+    _Inout_ PRTL_DEBUG_INFORMATION Buffer
+    );
 
 NTSYSAPI
 NTSTATUS
