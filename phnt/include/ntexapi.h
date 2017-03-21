@@ -1402,9 +1402,9 @@ typedef struct _SYSTEM_BASIC_INFORMATION
     ULONG LowestPhysicalPageNumber;
     ULONG HighestPhysicalPageNumber;
     ULONG AllocationGranularity;
-    ULONGLONG MinimumUserModeAddress;
-    ULONGLONG MaximumUserModeAddress;
-    ULONGLONG ActiveProcessorsAffinityMask;
+    ULONG_PTR MinimumUserModeAddress;
+    ULONG_PTR MaximumUserModeAddress;
+    ULONG_PTR ActiveProcessorsAffinityMask;
     CCHAR NumberOfProcessors;
 } SYSTEM_BASIC_INFORMATION, *PSYSTEM_BASIC_INFORMATION;
 
@@ -1535,9 +1535,9 @@ typedef struct _SYSTEM_EXTENDED_THREAD_INFORMATION
     PVOID StackLimit;
     PVOID Win32StartAddress;
     PTEB TebBase; // since VISTA
-    ULONGLONG Reserved2;
-    ULONGLONG Reserved3;
-    ULONGLONG Reserved4;
+    ULONG_PTR Reserved2;
+    ULONG_PTR Reserved3;
+    ULONG_PTR Reserved4;
 } SYSTEM_EXTENDED_THREAD_INFORMATION, *PSYSTEM_EXTENDED_THREAD_INFORMATION;
 
 typedef struct _SYSTEM_PROCESS_INFORMATION
@@ -1557,7 +1557,7 @@ typedef struct _SYSTEM_PROCESS_INFORMATION
     HANDLE InheritedFromUniqueProcessId;
     ULONG HandleCount;
     ULONG SessionId;
-    ULONGLONG UniqueProcessKey; // since VISTA (requires SystemExtendedProcessInformation)
+    ULONG_PTR UniqueProcessKey; // since VISTA (requires SystemExtendedProcessInformation)
     SIZE_T PeakVirtualSize;
     SIZE_T VirtualSize;
     ULONG PageFaultCount;
